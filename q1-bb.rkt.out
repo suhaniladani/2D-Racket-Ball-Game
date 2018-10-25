@@ -1,0 +1,79 @@
+--------------------
+q1 > Test #10
+Test #10
+FAILURE
+name:       check-equal?
+location:   q1-bb.rkt:177:4
+params:     '("I" "K" "M")
+'("A" "B" "C" "D" "E" "H" "I" "K" "L" "M" "O" "P")
+actual:     '("I" "K" "M")
+expected:   '("A" "B" "C" "D" "E" "H" "I" "K" "L" "M" "O" "P")
+expression: (check-equal? (remove-duplicates (outranks "F" (list (defeated "A" "B") (defeated "B" "C") (defeated "C" "D") (defeated "D" "E") (defeated "E" "H") (defeated "F" "I") (defeated "G" "K") (defeated "H" "L") (defeated "I" "M") (defeated "J" "N") (defeated "K" "O") (defeated "L" "P") (defeated "M" "K") (defeated "N" "L") (defeated "O" "A") (defeated "P" "B") (tie "C" "E")))) (list "A" "B" "C" "D" "E" "H" "I" "K" "L" "M" "O" "P"))
+message:    "There exists multiple cyclic paths between the competitors"
+Check failure
+--------------------
+--------------------
+q1 > Test #11
+Test #11
+FAILURE
+name:       check-equal?
+location:   q1-bb.rkt:205:4
+params:     '("A" "B" "C" "D" "E")
+'("A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P")
+actual:     '("A" "B" "C" "D" "E")
+expected:   '("A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P")
+expression: (check-equal? (remove-duplicates (outranked-by "E" (list (defeated "A" "B") (defeated "B" "C") (defeated "C" "D") (defeated "D" "E") (defeated "E" "H") (defeated "F" "I") (defeated "G" "K") (defeated "H" "L") (defeated "I" "M") (defeated "J" "N") (defeated "K" "O") (defeated "L" "P") (defeated "M" "K") (defeated "N" "L") (defeated "O" "A") (defeated "P" "B") (tie "C" "E") (tie "J" "P")))) (list "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P"))
+message:    "There exists multiple cyclic paths between the competitors"
+Check failure
+--------------------
+--------------------
+q1 > Test #12
+Test #12
+FAILURE
+name:       check-equal?
+location:   q1-bb.rkt:233:4
+params:     '("B" "C" "E" "H" "L" "P")
+'("B" "C" "D" "E" "H" "J" "L" "N" "P")
+actual:     '("B" "C" "E" "H" "L" "P")
+expected:   '("B" "C" "D" "E" "H" "J" "L" "N" "P")
+expression: (check-equal? (remove-duplicates (outranks "E" (list (defeated "A" "B") (defeated "B" "C") (defeated "C" "D") (defeated "D" "E") (defeated "E" "H") (defeated "F" "I") (defeated "G" "K") (defeated "H" "L") (defeated "I" "M") (defeated "J" "N") (defeated "K" "O") (defeated "L" "P") (defeated "M" "K") (defeated "N" "L") (defeated "O" "A") (defeated "P" "B") (tie "C" "E") (tie "J" "P")))) (list "B" "C" "D" "E" "H" "J" "L" "N" "P"))
+message:    "There exists multiple cyclic paths between the competitors"
+Check failure
+--------------------
+--------------------
+q1 > Test #14
+Test #14
+FAILURE
+name:       check-equal?
+location:   q1-bb.rkt:291:4
+params:     '("F" "I")
+'("A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P")
+actual:     '("F" "I")
+expected:   '("A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P")
+expression: (check-equal? (remove-duplicates (outranks "F" (list (defeated "A" "B") (tie "B" "C") (defeated "C" "D") (tie "D" "E") (defeated "E" "H") (tie "F" "I") (tie "G" "K") (defeated "H" "L") (defeated "I" "M") (tie "J" "N") (defeated "K" "O") (tie "L" "P") (defeated "M" "K") (tie "N" "L") (defeated "O" "A") (tie "P" "B") (tie "C" "E") (tie "J" "P")))) (list "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P"))
+message:    "There exists multiple cyclic paths between the competitors"
+Check failure
+--------------------
+--------------------
+q1 > Test #16
+Test #16
+FAILURE
+name:       check-equal?
+location:   q1-bb.rkt:331:4
+params:     '("C" "D" "E" "H" "J" "L" "N" "P")
+'("B" "C" "D" "E" "H" "J" "L" "N" "P")
+actual:     '("C" "D" "E" "H" "J" "L" "N" "P")
+expected:   '("B" "C" "D" "E" "H" "J" "L" "N" "P")
+expression: (check-equal? (remove-duplicates (outranks "E" (list (defeated "A" "B") (tie "B" "C") (defeated "C" "D") (tie "D" "E") (defeated "E" "H") (tie "F" "I") (tie "G" "K") (defeated "H" "L") (defeated "I" "M") (tie "J" "N") (defeated "K" "O") (tie "L" "P") (defeated "M" "K") (tie "N" "L") (defeated "O" "A") (tie "P" "B") (tie "C" "E") (tie "J" "P")))) (list "B" "C" "D" "E" "H" "J" "L" "N" "P"))
+message:    "There exists multiple cyclic paths between the competitors"
+Check failure
+--------------------
+12 success(es) 5 failure(s) 0 error(s) 17 test(s) run
+extras.rkt Wed Sep 14 08:52:19 2016
+common.rkt appears to be in a correctly named folder. Running tests...
+Running tests from common.rkt...
+All tests passed (5 tests).
+q1.rkt appears to be in a correctly named folder. Running tests...
+Running tests from q1.rkt...
+All tests passed (22 tests).
+5

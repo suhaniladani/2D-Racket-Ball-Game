@@ -1,0 +1,129 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname q2) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+
+(require rackunit)
+(require "extras.rkt")
+(check-location "08" "q1.rkt")
+;;(require "merge-sort.rkt")
+
+;;; A Competitor is represented as a String (any string will do).
+
+;;; An Outcome is one of
+;;;     -- a Tie
+;;;     -- a Defeat
+;;;
+;;; OBSERVER TEMPLATE:
+;;; outcome-fn : Outcome -> ??
+#;
+(define (outcome-fn o)
+(cond ((tie? o) ...)
+((defeat? o) ...)))
+
+;;; tie : Competitor Competitor -> Tie
+;;; GIVEN: the names of two competitors
+;;; RETURNS: an indication that the two competitors have
+;;;     engaged in a contest, and the outcome was a tie
+;;; EXAMPLE: (see the examples given below for defeated?,
+;;;     which shows the desired combined behavior of tie
+;;;     and defeated?)
+;;;
+
+(define (tie competitor-1 competitor-2)
+  (cons competitor-1 (cons competitor-2 empty)))
+
+;;; defeated : Competitor Competitor -> Defeat
+;;; GIVEN: the names of two competitors
+;;; RETURNS: an indication that the two competitors have
+;;;     engaged in a contest, with the first competitor
+;;;     defeating the second
+;;; EXAMPLE: (see the examples given below for defeated?,
+;;;     which shows the desired combined behavior of defeated
+;;;     and defeated?)
+;;;
+
+(define (defeated competitor-1 competitor-2)
+  (cons competitor-1 (cons competitor-2 empty)))
+
+;;; defeated? : Competitor Competitor OutcomeList -> Boolean
+;;; GIVEN: the names of two competitors and a list of outcomes
+;;; RETURNS: true if and only if one or more of the outcomes indicates
+;;;     the first competitor has defeated or tied the second
+;;; EXAMPLES:
+;;;     (defeated? "A" "B" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => true
+;;;
+;;;     (defeated? "A" "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => false
+;;;
+;;;     (defeated? "B" "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => false
+;;;
+;;;     (defeated? "B" "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => true
+;;;
+;;;     (defeated? "C" "B" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => true
+;;;
+
+
+(define (defeated? competitor-1 competitor-2 outcome-list)
+  (< (list-index competitor-1 (appending outcome-list))
+     (list-index competitor-2 (appending outcome-list))))
+
+(define list-index
+        (lambda (e lst)
+                (if (null? lst)
+                        -1 
+                        (if (eq? (car lst) e)
+                                0
+                                (if (= (list-index e (cdr lst)) -1) 
+                                        -1
+                                        (+ 1 (list-index e (cdr lst))))))))
+
+
+(define (appending outcome-list)
+  (cond
+    [(empty? outcome-list) empty]
+    [else (append (first outcome-list) empty
+         (appending (rest outcome-list)))]))
+
+ (defeated? "A" "B" (list (defeated "A" "B") (tie "B" "C")))
+
+
+   (defeated? "A" "C" (list (defeated "A" "B") (tie "B" "C")))
+
+(defeated? "B" "A" (list (defeated "A" "B") (tie "B" "C")))
+ (defeated? "B" "C" (list (defeated "A" "B") (tie "B" "C")))
+(defeated? "C" "B" (list (defeated "A" "B") (tie "B" "C")))
+
+;;; outranks : Competitor OutcomeList -> CompetitorList
+;;; GIVEN: the name of a competitor and a list of outcomes
+;;; RETURNS: a list of the competitors outranked by the given
+;;;     competitor, in alphabetical order
+;;; NOTE: it is possible for a competitor to outrank itself
+;;; EXAMPLES:
+;;;     (outranks "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "B" "C")
+;;;
+;;;     (outranks "B" (list (defeated "A" "B") (defeated "B" "A")))
+;;;  => (list "A" "B")
+;;;
+;;;     (outranks "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "B" "C")
+;;;
+
+;;; outranked-by : Competitor OutcomeList -> CompetitorList
+;;; GIVEN: the name of a competitor and a list of outcomes
+;;; RETURNS: a list of the competitors that outrank the given
+;;;     competitor, in alphabetical order
+;;; NOTE: it is possible for a competitor to outrank itself
+;;; EXAMPLES:
+;;;     (outranked-by "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list)
+;;;
+;;;     (outranked-by "B" (list (defeated "A" "B") (defeated "B" "A")))
+;;;  => (list "A" "B")
+;;;
+;;;     (outranked-by "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "A" "B" "C")

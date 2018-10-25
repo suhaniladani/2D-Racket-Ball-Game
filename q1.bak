@@ -1,0 +1,410 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname q1) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+(require rackunit)
+(require "extras.rkt")
+(require "common.rkt")
+(check-location "08" "q1.rkt")
+(provide tie
+         defeated
+         defeated?
+         outranked-by
+         outranks)
+
+;;; This problem set deals with the problem of ranking individuals or teams in
+;;;  a sport such as chess whose contests result in a win or tie (draw).
+
+;;; A Competitor is represented as a String (any string will do).
+
+;;; A CompetitorList is represented as a List of Competitors which is
+;;; represented by list of Strings
+;;; (list Competitor CompetitorList)
+
+;;; An Outcome is one of
+;;;     -- a Tie
+;;;     -- a Defeat
+;;;
+;;; OBSERVER TEMPLATE:
+;;; outcome-fn : Outcome -> ??
+#;
+(define (outcome-fn o)
+(cond ((tie? o) ...)
+((defeat? o) ...)))
+
+;;; An OutcomeList if one of the following:
+;;; -- empty
+;;; -- List of Outcomes
+
+;; OBSERVER TEMPLATE
+;; outcome-list-fn : OutcomeList -> ??
+#;
+(define (outcome-list-fn olst)
+  (cond
+    [(empty? olst) empty]
+    [else (... (outcome-fn (first olst))
+               (outcome-list-fn (rest olst)))]))
+
+;; A Tie is represented as list of competitors where
+;; there is a tie (draw) between the first and the second competitor.
+;; (list (list Competitor-1 Competitor-2)
+;;       (list Competitor-2 Competitor-1))
+
+;; Here we interpret tie as Competitor-1 defeated Competitor-2 and
+;; Competitor-2 defeated Competitor-1
+
+;; Defeated is represented as the list of competitors where the first
+;; element of the list has defeated the second element of the list
+;; (list Competitor-1 Competitor-2)
+
+;;; tie : Competitor Competitor -> Tie
+;;; GIVEN: the names of two competitors
+;;; WHERE : the ranking system implemented treats a tie as a win for both
+;;;         competitors and also as a loss for both competitors.
+;;; RETURNS: an indication that the two competitors have
+;;;     engaged in a contest, and the outcome was a tie
+;;; EXAMPLE: (see the examples given below for defeated?,
+;;;     which shows the desired combined behavior of tie
+;;;     and defeated?)
+;;;    (tie "A" "B") => (list (list "A" "B") (list "B" "A"))
+;;; STRATEGY : combine simpler functions
+
+(define (tie competitor-1 competitor-2)
+  (append (list (cons competitor-1 (cons competitor-2 empty)))
+         (list (cons competitor-2 (cons competitor-1 empty)))))
+
+
+;;; defeated : Competitor Competitor -> Defeat
+;;; GIVEN: the names of two competitors
+;;; RETURNS: an indication that the two competitors have
+;;;     engaged in a contest, with the first competitor
+;;;     defeating the second
+;;; EXAMPLE: (see the examples given below for defeated?,
+;;;        which shows the desired combined behavior of defeated
+;;;        and defeated?)
+;;;        (defeated "A" "B") => (list (list "A" "B"))
+;;; STRATEGY : combine simpler functions
+
+(define (defeated competitor-1 competitor-2)
+  (list (cons competitor-1 (cons competitor-2 empty))))
+
+
+;;; defeated? : Competitor Competitor OutcomeList -> Boolean
+;;; GIVEN: the names of two competitors and a list of outcomes
+;;; RETURNS: true if and only if one or more of the outcomes indicates
+;;;     the first competitor has defeated or tied the second
+;;; EXAMPLES:
+;;;     (defeated? "A" "B" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => true
+;;;
+;;;     (defeated? "A" "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => false
+;;;
+;;;     (defeated? "B" "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => false
+;;;
+;;;     (defeated? "B" "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => true
+;;;
+;;;     (defeated? "C" "B" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => true
+;;;
+;;; STRATEGY : use template for defeated on the given competitors
+
+(define (defeated? competitor-1 competitor-2 outcome-list)
+  (member? (cons competitor-1 (cons competitor-2 empty))
+           (appending outcome-list)))
+
+;; TESTS
+
+(begin-for-test
+  (check-equal? (defeated? "A" "B" (list (defeated "A" "B") (tie "B" "C")))
+                true
+                "A defeated B")
+  (check-equal? (defeated? "A" "C" (list (defeated "A" "B") (tie "B" "C")))
+                false
+                "A has not defeated C")
+  (check-equal? (defeated? "B" "A" (list (defeated "A" "B") (tie "B" "C")))
+                false
+                "B has not defeated A")
+  (check-equal? (defeated? "B" "C" (list (defeated "A" "B") (tie "B" "C")))
+                true
+                "B defeated C")
+  (check-equal? (defeated? "C" "B" (list (defeated "A" "B") (tie "B" "C")))
+                true
+                "C defeated B"))
+
+
+;;; outranks : Competitor OutcomeList -> CompetitorList
+;;; GIVEN: the name of a competitor and a list of outcomes
+;;; WHERE : a competitor A outranks a competitor B if any of the following
+;;;         are true :
+;;;         -One of the outcomes shows that A has defeated B.
+;;;         -One of the outcomes shows that A and B have tied.
+;;;         -There is a competitor C that outranks B according to the list of
+;;;          outcomes, and there is an outcome that shows A has defeated or
+;;;          tied C.
+;;; RETURNS: a list of the competitors outranked by the given
+;;;     competitor, in alphabetical order
+;;; NOTE: it is possible for a competitor to outrank itself
+;;; EXAMPLES:
+;;;     (outranks "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "B" "C")
+;;;
+;;;     (outranks "B" (list (defeated "A" "B") (defeated "B" "A")))
+;;;  => (list "A" "B")
+;;;
+;;;     (outranks "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "B" "C")
+;; STRATEGY : combine simpler functions
+
+(define (outranks competitor outcome-list)
+  (merge-sort
+   (remove-dups
+    (find-outranks
+     competitor (transitive (appending outcome-list)) empty) empty)))
+
+
+;; find-outranks : Competitor OutcomeList CompetitorList -> CompetitorList
+;; GIVEN : A Competitor, OutcomeList of defeat and tie, and an empty list 
+;; RETURNS : list of Competitor that the given Competitor outranks appended
+;;           to the empty list
+;; WHERE : the outrank-list is List of competitors that the given Competitor
+;;         outranks
+;; EXAMPLES : 
+;;      (find-outranks "A" (list (defeated "A" "B") (tie "B" "C")) '()) 
+;;             => (list "B" "C")
+;;      (find-outranks "B" (list (defeated "A" "B") (defeated "B" "A")) '()) 
+;;             => (list "A" "B")
+;;
+;;      (find-outranks "C" (list (defeated "A" "B") (tie "B" "C")) '()) 
+;;             => (list "B" "C")
+;; STRATEGY : use cases on outcome-list
+;;            to make a recursive call on (rest outcome-list)
+
+(define (find-outranks competitor outcome-list outrank-list)
+  (cond
+    [(empty? outcome-list) empty]
+    [(equal? (first (first outcome-list)) competitor)
+     (append
+      (cons (second (first outcome-list)) empty)
+      (find-outranks competitor (rest outcome-list) outrank-list)
+      outrank-list)]
+    [else (find-outranks competitor (rest outcome-list) outrank-list)]))
+
+
+(begin-for-test
+  (check-equal? (outranks "A" (list (defeated "A" "B") (tie "B" "C")))
+                (list "B" "C"))
+  (check-equal? (outranks "B" (list (defeated "A" "B") (defeated "B" "A")))
+                (list "A" "B"))
+  (check-equal? (outranks "C" (list (defeated "A" "B") (tie "B" "C")))
+                (list "B" "C")))
+
+
+;;; outranked-by : Competitor OutcomeList -> CompetitorList
+;;; GIVEN: the name of a competitor and a list of outcomes
+;;; RETURNS: a list of the competitors that outrank the given
+;;;     competitor, in alphabetical order
+;;; NOTE: it is possible for a competitor to outrank itself
+;;; EXAMPLES:
+;;;     (outranked-by "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list)
+;;;
+;;;     (outranked-by "B" (list (defeated "A" "B") (defeated "B" "A")))
+;;;  => (list "A" "B")
+;;;
+;;;     (outranked-by "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "A" "B" "C")
+;; STRATEGY : combine simpler functions
+
+(define (outranked-by competitor outcome-list)
+  (merge-sort
+   (remove-dups
+    (find-outranked-by
+     competitor (transitive (appending outcome-list)) empty) empty)))
+
+;; find-outranked-by : Competitor OutcomeList CompetitorList -> CompetitorList
+;; GIVEN : A Competitor, OutcomeList of defeat and tie, and an empty list 
+;; RETURNS : list of Competitor that outranks the given Competitor, appended
+;;           to the empty list
+;; outrank-list : List of competitors that outranks given Competitor
+;;; EXAMPLES:
+;;;     (outranked-by "A" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list)
+;;;
+;;;     (outranked-by "B" (list (defeated "A" "B") (defeated "B" "A")))
+;;;  => (list "A" "B")
+;;;
+;;;     (outranked-by "C" (list (defeated "A" "B") (tie "B" "C")))
+;;;  => (list "A" "B" "C")
+;; STRATEGY : use cases on outcome-list to make a recursive call on
+;;            rest outrank-list
+
+(define (find-outranked-by competitor outcome-list outrank-list)
+  (cond
+    [(empty? outcome-list) empty]
+    [(equal? (second (first outcome-list)) competitor)
+     (append (cons (first (first outcome-list)) empty)
+             (find-outranked-by competitor (rest outcome-list) outrank-list)
+             outrank-list)]
+    [else (find-outranked-by competitor (rest outcome-list) outrank-list)]))
+
+
+;; transitive : OutcomeList ->  OutcomeList
+;; GIVEN : list of Outcomes
+;; WHERE : L is the List of outcomes on which the transitive closure is applied
+;; RETURNS : a list of outcomes with transitive closure applied on each of
+;;           its Outcome
+;; EXAMPLES :
+;;            (transitive '((a b) (a d) (x y))) =>  '((a b) (a d) (x y)))
+;;            (transitive '((a b) (a x) (x a))) =>
+;;                        '((a b) (a x) (x a) (a a) (x x) (x b)))
+;; STRATEGY : use simpler functions
+
+(define (transitive L)
+  (remove-dups (append L (transitive-closure L)) empty))
+
+;; transitive-closure : OutcomeList
+;; GIVEN : list of Outcomes
+;; RETURNS : a list of outcomes with transitive closure applied on trasitive
+;;           Outcome pairs
+;; WHERE : L is the List of outcomes on which the transitive closure is applied
+;; EXAMPLES :
+;;          (transitive '((a b) (a d) (x y))) =>  '((a b) (a d) (x y)))
+;;          (transitive '((a b) (a x) (x a))) =>
+;;                       '((a b) (a x) (x a) (a a) (x x) (x b)))
+;; STRATEGY : use recursive call on L
+
+(define (transitive-closure L)
+ (cond
+   [(empty? L) empty]
+   [else
+    (append (transitive-pairs (first L) L)
+         (transitive-closure (rest L)))]))
+
+;; transitive-pairs : Outcome OutcomeList -> OutcomeList
+;; GIVEN : list of Outcomes and an Outcome from the list of Outcomes
+;; WHERE : n is an element of the OutcomeList which is compared with all the
+;;         elements of the list L to find its transitive pair
+;; RETURNS : a list of outcomes with transitive closure applied on the given
+;;           Outcome
+;; EXAMPLES :
+;;           (transitive '((a b) (a d) (x y))) =>  '((a b) (a d) (x y)))
+;;           (transitive '((a b) (a x) (x a))) =>
+;;                                '((a b) (a x) (x a) (a a) (x x) (x b)))
+;; STRATEGY : use divide into cases on L to make a recursive call on rest L
+
+(define (transitive-pairs n L)
+(cond
+    [(empty? L) L]
+    [(and (equal? (second n) (first (first L)))
+          (equal? (first n) (second (first L))))
+     (cons (list (first n) (second (first L)))
+           (cons (list (first (first L)) (second n)) empty))]
+    [(equal? (second n) (first (first L)))
+     (append (cons (list (first n) (second (first L))) empty)
+             (transitive-pairs (list (first n) (second (first L))) L))]
+    [(equal? (first n) (second (first L)))
+     (append (cons (list (first (first L)) (second n)) empty)
+             (transitive-pairs (list (first (first L)) (second n)) L))]
+    [else (transitive-pairs n (rest L))]))
+
+
+
+;; TESTS
+
+(begin-for-test
+  
+  (check-equal? (outranked-by "A" (list (defeated "A" "B") (tie "B" "C")))
+                (list)
+                "A is not outranked-by any competitors")
+
+  (check-equal? (outranked-by "B" (list (defeated "A" "B") (defeated "B" "A")))
+                (list "A" "B")
+                "B is outranked by A and itself")
+
+  (check-equal? (outranked-by "C" (list (defeated "A" "B") (tie "B" "C")))
+                (list "A" "B" "C")
+                "C is outranked by A, B and C"))
+
+
+;; TESTS for transitivity
+
+(begin-for-test (check same-list? (transitive '((a b) (a d) (e f)))
+              '((a b) (a d) (e f)))
+        
+(check same-list? (transitive '((a b) (a e) (e a)))
+              '((a b) (a e) (e a) (a a) (e e) (e b)))
+        
+(check same-list? (transitive '((a b) (d e) (b c) (e f) (p q)))
+              '((a b) (b c) (d e) (e f) (p q) (a c) (d f)))
+    
+(check same-list? (transitive '((a b) (b c) (c d)))
+              '((a b) (b c) (c d) (a c) (b d) (a d)))
+
+(check same-list? (transitive '((a b) (b c) (c d) (d e)))
+              '((a b) (b c) (c d) (a c) (b d) (a d) (c e) (b e) (d e) (a e)))
+    
+(check same-list?
+       (transitive '((a b) (b c) (c d) (d e) (e f) (f g) (g h) (h a)))
+       '((g a) (f a) (f h) (e a) (e h) (e g) (d a) (d h) (d g) (d f)
+               (c a) (c h) (c g) (c f) (c e) (b a) (b h) (b g) (b f)
+               (b e) (b d) (h h) (a a) (a h) (a g) (a f) (a e) (a d)
+               (a c) (h a) (g h) (f g) (e f) (d e) (c d) (b c) (a b)))
+
+(check same-list? (transitive '((a b) (b a) (c d) (d e)))
+              '((a b) (b a) (a a) (b b) (c e) (d e) (c d))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; help function for testing:
+
+;; same-list? : StringList StringList -> Boolean
+;; RETURNS: true iff the two StringList contain exactly the same
+;;          Strings.
+;; STRATEGY: Combine simpler functions
+
+(define (same-list? lst1 lst2)
+  (and
+    (list-subset? lst1 lst2)
+    (list-subset? lst2 lst1)))
+
+;; list-subset? : StringList StringList -> Boolean
+;; RETURNS : true iff every String in the first list occurs in the
+;;            second list.
+;; STRATEGY : Observer template for StringList
+
+(define (list-subset? lst1 lst2)
+  (cond
+    [(empty? lst1) true]
+    [(member (first lst1) lst2)
+     (list-subset? (rest lst1) lst2)]
+    [else false]))
+
+;; TESTS for same-list?
+
+(begin-for-test
+  (check-true
+    (same-list?
+      (list "x" "y")
+      (list "y" "x"))
+    "reorderings in second arg shouldn't change answer
+    from same-list?")
+  (check-true
+    (same-list?
+      (list "x" "y" "z")
+      (list "z" "y" "x"))
+    "reorderings in first arg shouldn't change answer
+    from same-list?")
+  (check-false
+    (same-list?
+      (list "x" "y" "z")
+      (list "z" "x"))
+    "deletion in 2nd argument should return false")
+
+  (check-false
+    (same-list?
+      (list "x" "y" "p")
+      (list "y" "p"))
+    "deletion in 1st argument should return false"))
+
